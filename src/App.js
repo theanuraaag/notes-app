@@ -1,75 +1,108 @@
 import { useState, useEffect } from 'react';
-import { nanoid } from 'nanoid';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import NotesList from './components/NotesList';
 import Search from './components/Search';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import Login from './components/Login';
+import SignUp from './components/SignUp';
+import { auth } from './firebase-config';
+import { onAuthStateChanged } from 'firebase/auth';
+import { db } from './firebase-config';
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  where,
+  deleteDoc,
+  doc
+} from 'firebase/firestore';
 
 const App = () => {
-	const [notes, setNotes] = useState([
-		{
-			id: nanoid(),
-			text: 'Welcome to Note App, your notes are secured with us.',
-			date: 'DD/MM/YYYY',
-		},
-	]);
+  const [notes, setNotes] = useState([]);
+  const [searchText, setSearchText] = useState('');
+  const [darkMode, setDarkMode] = useState(false);
+  const [user, setUser] = useState(null);
 
-	const [searchText, setSearchText] = useState('');
+  useEffect(() => {
+    if (!user) return; 
+    const q = query(collection(db, 'notes'), where('userId', '==', user.uid));
 
-	const [darkMode, setDarkMode] = useState(false);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const userNotes = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setNotes(userNotes);
+    });
 
-	useEffect(() => {
-		const savedNotes = JSON.parse(
-			localStorage.getItem('react-notes-app-data')
-		);
+    return () => unsubscribe();
+  }, [user]);
 
-		if (savedNotes) {
-			setNotes(savedNotes);
-		}
-	}, []);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return unsubscribe;
+  }, []);
 
-	useEffect(() => {
-		localStorage.setItem(
-			'react-notes-app-data',
-			JSON.stringify(notes)
-		);
-	}, [notes]);
+  const addNote = async (text) => {
+    if (!user) return; 
+    const date = new Date();
+    const note = {
+      text,
+      date: date.toLocaleDateString(),
+      userId: user.uid,
+    };
 
-	const addNote = (text) => {
-		const date = new Date();
-		const newNote = {
-			id: nanoid(),
-			text: text,
-			date: date.toLocaleDateString(),
-		};
-		const newNotes = [...notes, newNote];
-		setNotes(newNotes);
-	};
+    try {
+      await addDoc(collection(db, 'notes'), note);
+    } catch (err) {
+      console.error('Error adding note: ', err);
+    }
+  };
 
-	const deleteNote = (id) => {
-		const newNotes = notes.filter((note) => note.id !== id);
-		setNotes(newNotes);
-	};
+  const deleteNote = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'notes', id));
+    } catch (err) {
+      console.error('Error deleting note: ', err);
+    }
+  };
 
-	return (
-		<div className={`${darkMode && 'dark-mode'}`}>
-		<div className='main-container'>
-			<div className='container'>
-				<Header handleToggleDarkMode={setDarkMode} />
-				<Search handleSearchNote={setSearchText} />
-				<NotesList
-					notes={notes.filter((note) =>
-						note.text.toLowerCase().includes(searchText)
-					)}
-					handleAddNote={addNote}
-					handleDeleteNote={deleteNote}
-				/>
-				
-			</div>
-			<Footer />
-			</div>
-		</div>
-	);
+  const NotesPage = () => (
+    <>
+      <Header handleToggleDarkMode={setDarkMode} user={user} darkMode={darkMode} />
+      <Search handleSearchNote={setSearchText} />
+      <NotesList
+        notes={notes.filter((note) =>
+          note.text.toLowerCase().includes(searchText)
+        )}
+        handleAddNote={addNote}
+        handleDeleteNote={deleteNote}
+      />
+    </>
+  );
+
+  return (
+    <Router>
+      <div className={`${darkMode && 'dark-mode'}`}>
+        <div className="main-container">
+          <div className="container">
+            <Routes>
+              <Route path="/" element={user ? <NotesPage /> : <Navigate to="/login" />} />
+              <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+              <Route path="/signup" element={!user ? <SignUp /> : <Navigate to="/" />} />
+              {/* Optional 404 page */}
+              <Route path="*" element={<h2>404 - Page Not Found</h2>} />
+            </Routes>
+          </div>
+          <Footer />
+        </div>
+      </div>
+    </Router>
+  );
 };
 
 export default App;
