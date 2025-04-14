@@ -10,7 +10,7 @@ import { auth } from './firebase-config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db } from './firebase-config';
 import {
-  collection, 
+  collection,
   addDoc,
   onSnapshot,
   query,
@@ -26,7 +26,7 @@ const App = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    if (!user) return; 
+    if (!user) return;
     const q = query(collection(db, 'notes'), where('userId', '==', user.uid));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -48,7 +48,7 @@ const App = () => {
   }, []);
 
   const addNote = async (text) => {
-    if (!user) return; 
+    if (!user) return;
     const date = new Date();
     const note = {
       text,
@@ -74,10 +74,15 @@ const App = () => {
   const NotesPage = () => (
     <>
       <Header handleToggleDarkMode={setDarkMode} user={user} darkMode={darkMode} />
-      <Search handleSearchNote={setSearchText} />
+      <Search
+  handleSearchNote={setSearchText}
+  searchText={searchText}
+/>
+
+      
       <NotesList
         notes={notes.filter((note) =>
-          note.text.toLowerCase().includes(searchText)
+          note.text.toLowerCase().includes(searchText.toLowerCase())
         )}
         handleAddNote={addNote}
         handleDeleteNote={deleteNote}
@@ -87,8 +92,8 @@ const App = () => {
 
   return (
     <Router>
-      <div className={`${darkMode && 'dark-mode'}`}>
-        <div className="main-container">
+      <div className={`${darkMode ? 'dark bg-gray-900 text-white' : ''} min-h-screen flex flex-col md:px-12 lg:px-20 xl:px-40`}>
+        <div className="flex-grow">
           <div className="container">
             <Routes>
               <Route path="/" element={user ? <NotesPage /> : <Navigate to="/login" />} />
@@ -98,11 +103,13 @@ const App = () => {
               <Route path="*" element={<h2>404 - Page Not Found</h2>} />
             </Routes>
           </div>
-          <Footer />
+
         </div>
+        <Footer />
       </div>
     </Router>
   );
 };
+
 
 export default App;
