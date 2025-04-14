@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import NotesList from './components/NotesList';
-import Search from './components/Search';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import Login from './components/Login';
-import SignUp from './components/SignUp';
-import { auth } from './firebase-config';
+import NotesList from './components/NotesList.jsx';
+import Search from './components/Search.jsx';
+import Header from './components/Header.jsx';
+import Footer from './components/Footer.jsx';
+import Login from './components/Login.jsx';
+import SignUp from './components/SignUp.jsx';
+import { auth } from './firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
-import { db } from './firebase-config';
+import { db } from './firebase-config.js';
 import {
   collection,
   addDoc,
