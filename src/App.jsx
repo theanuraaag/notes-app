@@ -6,6 +6,7 @@ import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
 import Login from './components/Login.jsx';
 import SignUp from './components/SignUp.jsx';
+import ImageUpload from './components/ImageUpload.jsx'; 
 import { auth } from './firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db } from './firebase-config.js';
@@ -57,7 +58,7 @@ const App = () => {
     return unsubscribe;
   }, []);
 
-  const addNote = async (text) => {
+  const addNote = async (text, imageUrl = '') => {
     if (!user) return;
     const date = new Date();
     const note = {
@@ -65,6 +66,7 @@ const App = () => {
       date: date.toLocaleDateString(),
       userId: user.uid,
       pinned: false, 
+      imageUrl,
     };
 
     try {

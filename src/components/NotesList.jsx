@@ -16,6 +16,7 @@ const NotesList = ({ notes, handleAddNote, handleDeleteNote, handleEditNote, han
           text={note.text}
           date={note.date}
           pinned={note.pinned}
+          imageUrl={note.imageUrl}
           handleDeleteNote={handleDeleteNote}
           handleEditNote={handleEditNote}
           handleTogglePinNote={handleTogglePinNote}  // Pass the function to toggle pin status
