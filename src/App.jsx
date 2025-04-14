@@ -9,6 +9,7 @@ import SignUp from './components/SignUp.jsx';
 import { auth } from './firebase-config.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db } from './firebase-config.js';
+
 import {
   collection,
   addDoc,
@@ -16,7 +17,9 @@ import {
   query,
   where,
   deleteDoc,
-  doc
+  doc,
+  updateDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 
 const App = () => {
@@ -24,6 +27,13 @@ const App = () => {
   const [searchText, setSearchText] = useState('');
   const [darkMode, setDarkMode] = useState(false);
   const [user, setUser] = useState(null);
+  const handleEditNote = (id, newText) => {
+    setNotes((prevNotes) =>
+      prevNotes.map((note) =>
+        note.id === id ? { ...note, text: newText } : note
+      )
+    );
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -54,6 +64,7 @@ const App = () => {
       text,
       date: date.toLocaleDateString(),
       userId: user.uid,
+      pinned: false, 
     };
 
     try {
@@ -70,23 +81,50 @@ const App = () => {
       console.error('Error deleting note: ', err);
     }
   };
+  const editNote = async (id, newText) => {
+    try {
+      const noteRef = doc(db, 'notes', id);
+      await updateDoc(noteRef, { 
+        text: newText,
+        updatedAt: serverTimestamp(),
+      });
+      
+    } catch (err) {
+      console.error('Error updating note:', err);
+    }
+  };
+  const togglePinNote = async (id, isPinned) => {
+    try {
+      const noteRef = doc(db, 'notes', id);
+      await updateDoc(noteRef, { 
+        pinned: !isPinned,  // Toggle the pin status
+        updatedAt: serverTimestamp(),
+      });
+    } catch (err) {
+      console.error('Error toggling pin note:', err);
+    }
+  };
 
   const NotesPage = () => (
     <>
       <Header handleToggleDarkMode={setDarkMode} user={user} darkMode={darkMode} />
       <Search
-  handleSearchNote={setSearchText}
-  searchText={searchText}
-/>
-
-      
-      <NotesList
-        notes={notes.filter((note) =>
-          note.text.toLowerCase().includes(searchText.toLowerCase())
-        )}
-        handleAddNote={addNote}
-        handleDeleteNote={deleteNote}
+        handleSearchNote={setSearchText}
+        searchText={searchText}
       />
+
+
+<NotesList
+  notes={notes
+    .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) // This ensures pinned notes come first
+    .filter((note) =>
+      note.text.toLowerCase().includes(searchText.toLowerCase())
+  )}
+  handleAddNote={addNote}
+  handleDeleteNote={deleteNote}
+  handleEditNote={editNote}
+  handleTogglePinNote={togglePinNote}
+/>
     </>
   );
 
