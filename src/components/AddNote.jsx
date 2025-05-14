@@ -16,13 +16,18 @@ const AddNote = ({ handleAddNote }) => {
   };
 
   const handleImageChange = (e) => {
-    setImageFile(e.target.files[0]);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
-    reader.readAsDataURL(file);
+  const file = e.target.files[0]; 
+  setImageFile(file);
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setImagePreview(reader.result);
   };
+  if (file) {
+    reader.readAsDataURL(file);
+  }
+};
+
   
 
   const uploadImageToCloudinary = async () => {
